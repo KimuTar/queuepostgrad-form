@@ -11,23 +11,27 @@
     <div class="bg-white rounded-2xl p-6">
       <h1 class="text-2xl font-bold text-purple-800 mb-6 text-center">ระบบเก็บข้อมูลผู้มาใช้บริการสำนักงานบัณฑิตศึกษา</h1>
 
-      <form id="queueForm" class="space-y-4">
-        <!-- ลำดับที่ -->
+      <!-- แสดงสถานะการบันทึก -->
+      <div id="statusMessage" class="hidden mb-4 p-3 rounded text-center"></div>
+
+      <!-- ส่วนแสดงผลหลังจากบันทึกข้อมูล -->
+      <div id="resultSection" class="hidden space-y-4 mb-4">
         <div>
           <label class="block font-medium text-purple-700">ลำดับที่</label>
           <div id="queueNumber" class="mt-1 p-2 border rounded bg-gray-100 text-gray-700">-</div>
         </div>
-
-        <!-- วันที่และเวลา -->
         <div>
           <label class="block font-medium text-purple-700">วันที่และเวลา</label>
           <div id="timestamp" class="mt-1 p-2 border rounded bg-gray-100 text-gray-700">-</div>
         </div>
+      </div>
 
+      <!-- ฟอร์มกรอกข้อมูล -->
+      <form id="queueForm" class="space-y-4">
         <!-- ผู้ที่มาติดต่อ -->
         <div>
-          <label for="userType" class="block font-medium text-purple-700">ผู้ที่มาติดต่อ</label>
-          <select id="userType" name="userType" class="mt-1 w-full p-2 border rounded">
+          <label for="userType" class="block font-medium text-purple-700">ผู้ที่มาติดต่อ *</label>
+          <select id="userType" name="userType" class="mt-1 w-full p-2 border rounded" required>
             <option value="">-- กรุณาเลือก --</option>
             <option value="นักศึกษาปริญญาโท">นักศึกษาปริญญาโท</option>
             <option value="นักศึกษาปริญญาเอก">นักศึกษาปริญญาเอก</option>
@@ -43,8 +47,8 @@
 
         <!-- เรื่องที่ติดต่อ -->
         <div>
-          <label for="topic" class="block font-medium text-purple-700">เรื่องที่ติดต่อ</label>
-          <select id="topic" name="topic" class="mt-1 w-full p-2 border rounded">
+          <label for="topic" class="block font-medium text-purple-700">เรื่องที่ติดต่อ *</label>
+          <select id="topic" name="topic" class="mt-1 w-full p-2 border rounded" required>
             <option value="ส่งเอกสารต่างๆ">ส่งเอกสารต่างๆ</option>
             <option value="การสอบ">การสอบ</option>
             <option value="การสอบถามข้อมูลทั่วไป">การสอบถามข้อมูลทั่วไป</option>
@@ -54,13 +58,15 @@
 
         <!-- ถ้าเลือกอื่นๆ -->
         <div id="otherTopicSection" class="hidden">
-          <label for="otherTopic" class="block font-medium text-purple-700">กรุณาระบุ</label>
+          <label for="otherTopic" class="block font-medium text-purple-700">กรุณาระบุ *</label>
           <input type="text" id="otherTopic" name="otherTopic" class="mt-1 w-full p-2 border rounded" />
         </div>
 
         <!-- ปุ่ม submit -->
         <div class="text-center">
-          <button type="submit" class="bg-purple-700 text-white px-6 py-2 rounded-full hover:bg-purple-800 shadow-md">บันทึกข้อมูล</button>
+          <button type="submit" id="submitBtn" class="bg-purple-700 text-white px-6 py-2 rounded-full hover:bg-purple-800 shadow-md">
+            บันทึกข้อมูล
+          </button>
         </div>
       </form>
     </div>
@@ -73,12 +79,15 @@
     const topic = document.getElementById("topic");
     const otherTopicSection = document.getElementById("otherTopicSection");
     const form = document.getElementById("queueForm");
+    const resultSection = document.getElementById("resultSection");
     const queueNumber = document.getElementById("queueNumber");
     const timestamp = document.getElementById("timestamp");
+    const statusMessage = document.getElementById("statusMessage");
+    const submitBtn = document.getElementById("submitBtn");
 
-    // URL ของ Google Apps Script ที่คุณ deploy แล้ว
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzwO67oJWb3shZ9fhmtwbo4X3-4Y3JjWaYAlEThCmt4C3wi2gImeb-v5RPmuhYOGYg/exec"; // ให้แทนที่ด้วย URL ที่ได้จากการ deploy
-
+    // เปลี่ยนเป็น URL ของ Google Apps Script ที่ deploy แล้ว
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzwO67oJWb3shZ9fhmtwbo4X3-4Y3JjWaYAlEThCmt4C3wi2gImeb-v5RPmuhYOGYg/exec";
+    
     const majors = {
       "นักศึกษาปริญญาโท": [
         "นิติศาสตร์",
@@ -118,62 +127,112 @@
 
     topic.addEventListener("change", () => {
       otherTopicSection.classList.toggle("hidden", topic.value !== "อื่นๆ");
+      if (topic.value === "อื่นๆ") {
+        document.getElementById("otherTopic").setAttribute("required", "");
+      } else {
+        document.getElementById("otherTopic").removeAttribute("required");
+      }
     });
+
+    // แสดงข้อความสถานะ
+    function showStatus(message, isError = false) {
+      statusMessage.textContent = message;
+      statusMessage.className = `mb-4 p-3 rounded text-center ${isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`;
+      statusMessage.classList.remove("hidden");
+    }
+
+    // ซ่อนข้อความสถานะ
+    function hideStatus() {
+      statusMessage.classList.add("hidden");
+    }
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
-
-      // ตรวจสอบว่าเลือกประเภทผู้ใช้หรือไม่
+      
+      // ตรวจสอบข้อมูล
       if (!userType.value) {
-        alert("กรุณาเลือกประเภทผู้มาติดต่อ");
+        showStatus("กรุณาเลือกประเภทผู้มาติดต่อ", true);
+        return;
+      }
+      
+      if (topic.value === "อื่นๆ" && !document.getElementById("otherTopic").value.trim()) {
+        showStatus("กรุณาระบุเรื่องที่ติดต่อ", true);
         return;
       }
 
-      const formData = {
+      // แสดงข้อความกำลังประมวลผล
+      showStatus("กำลังบันทึกข้อมูล...");
+      submitBtn.disabled = true;
+      submitBtn.textContent = "กำลังบันทึก...";
+      
+      // สร้าง FormData เพื่อส่งแบบ no-cors
+      const formData = new FormData();
+      formData.append("userType", userType.value);
+      formData.append("major", majorSelect.value || "");
+      formData.append("topic", topic.value);
+      formData.append("otherTopic", document.getElementById("otherTopic").value || "");
+      
+      // เตรียมข้อมูล JSON เพื่อส่งแบบ jsonp
+      const jsonData = {
         userType: userType.value,
-        major: majorSelect.value,
+        major: majorSelect.value || "",
         topic: topic.value,
-        otherTopic: document.getElementById("otherTopic").value
+        otherTopic: document.getElementById("otherTopic").value || ""
       };
-
-      try {
-        // แสดงข้อความกำลังประมวลผล
-        queueNumber.textContent = "กำลังบันทึก...";
-        timestamp.textContent = "กำลังบันทึก...";
-
-        // ส่งข้อมูลไปยัง Google Apps Script
-        const response = await fetch(SCRIPT_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "text/plain;charset=utf-8",
-          },
-          body: JSON.stringify(formData)
-        });
-
-        // รับข้อมูลตอบกลับ
-        const result = await response.json();
-        
-        if (result.success) {
-          // แสดงลำดับคิวและเวลา
-          queueNumber.textContent = result.index;
+      
+      // แก้ไขปัญหา CORS โดยใช้ JSONP technique แทน fetch
+      // สร้าง script element
+      const script = document.createElement('script');
+      
+      // สร้างชื่อ callback function พร้อม timestamp เพื่อไม่ให้ซ้ำกัน
+      const callbackName = 'jsonpCallback' + Date.now();
+      
+      // สร้าง global function เพื่อรับข้อมูลจาก server
+      window[callbackName] = function(data) {
+        if (data && data.success) {
+          // แสดงผลลัพธ์
+          resultSection.classList.remove("hidden");
+          queueNumber.textContent = data.index || "-";
           timestamp.textContent = new Date().toLocaleString("th-TH");
           
-          // แจ้งเตือนและรีเซ็ตฟอร์ม
-          alert("บันทึกข้อมูลเรียบร้อยแล้ว!");
+          // แสดงข้อความสำเร็จ
+          showStatus("บันทึกข้อมูลเรียบร้อยแล้ว!");
+          
+          // รีเซ็ตฟอร์ม
           form.reset();
           majorSection.classList.add("hidden");
           otherTopicSection.classList.add("hidden");
         } else {
-          alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล: " + (result.error || "ไม่ทราบสาเหตุ"));
-          queueNumber.textContent = "-";
-          timestamp.textContent = "-";
+          // แสดงข้อความผิดพลาด
+          showStatus("เกิดข้อผิดพลาดในการบันทึกข้อมูล", true);
         }
-      } catch (error) {
-        alert("เกิดข้อผิดพลาดในการส่งข้อมูล: " + error.message);
-        console.error(error);
-        queueNumber.textContent = "-";
-        timestamp.textContent = "-";
-      }
+        
+        // คืนค่าปุ่ม
+        submitBtn.disabled = false;
+        submitBtn.textContent = "บันทึกข้อมูล";
+        
+        // ลบ global function เมื่อใช้งานเสร็จ
+        delete window[callbackName];
+        
+        // ลบ script element
+        script.remove();
+      };
+      
+      // เพิ่ม script เข้าไปใน document
+      // ส่งข้อมูลไปยัง Google Apps Script พร้อมชื่อ callback
+      script.src = `${SCRIPT_URL}?callback=${callbackName}&data=${encodeURIComponent(JSON.stringify(jsonData))}`;
+      document.body.appendChild(script);
+      
+      // เพิ่ม timeout เพื่อจัดการกรณีที่ไม่ได้รับการตอบกลับ
+      setTimeout(() => {
+        if (window[callbackName]) {
+          showStatus("ไม่ได้รับการตอบกลับจากเซิร์ฟเวอร์", true);
+          submitBtn.disabled = false;
+          submitBtn.textContent = "บันทึกข้อมูล";
+          delete window[callbackName];
+          script.remove();
+        }
+      }, 10000); // timeout 10 วินาที
     });
   </script>
 </body>
