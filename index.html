@@ -3,15 +3,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ระบบลงทะเบียนผู้ใช้บริการ</title>
+  <title>ระบบเก็บข้อมูลผู้มาใช้บริการสำนักงานบัณฑิตศึกษา</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-white text-gray-800 min-h-screen flex items-center justify-center p-4">
   <div class="w-full max-w-2xl bg-gradient-to-br from-purple-600 via-red-500 to-yellow-400 rounded-2xl shadow-xl p-1">
     <div class="bg-white rounded-2xl p-6">
-      <h1 class="text-2xl font-bold text-purple-800 mb-6 text-center">ระบบเก็บข้อมูลผู้มาติดต่อสำนักงานบัณฑิตศึกษา</h1>
+      <h1 class="text-2xl font-bold text-purple-800 mb-6 text-center">ระบบเก็บข้อมูลผู้มาใช้บริการสำนักงานบัณฑิตศึกษา</h1>
 
       <form id="queueForm" class="space-y-4">
+        <!-- ลำดับที่ -->
+        <div>
+          <label class="block font-medium text-purple-700">ลำดับที่</label>
+          <div id="queueNumber" class="mt-1 p-2 border rounded bg-gray-100 text-gray-700">-</div>
+        </div>
+
+        <!-- วันที่และเวลา -->
+        <div>
+          <label class="block font-medium text-purple-700">วันที่และเวลา</label>
+          <div id="timestamp" class="mt-1 p-2 border rounded bg-gray-100 text-gray-700">-</div>
+        </div>
+
         <!-- ผู้ที่มาติดต่อ -->
         <div>
           <label for="userType" class="block font-medium text-purple-700">ผู้ที่มาติดต่อ</label>
@@ -61,6 +73,8 @@
     const topic = document.getElementById("topic");
     const otherTopicSection = document.getElementById("otherTopicSection");
     const form = document.getElementById("queueForm");
+    const queueNumber = document.getElementById("queueNumber");
+    const timestamp = document.getElementById("timestamp");
 
     const majors = {
       "นักศึกษาปริญญาโท": [
@@ -116,12 +130,16 @@
       try {
         const response = await fetch("YOUR_GOOGLE_SCRIPT_WEB_APP_URL", {
           method: "POST",
-          mode: "no-cors",
+          mode: "cors",
           headers: {
             "Content-Type": "application/json"
           },
           body: JSON.stringify(formData)
         });
+
+        const result = await response.json();
+        queueNumber.textContent = result.index;
+        timestamp.textContent = new Date().toLocaleString("th-TH");
 
         alert("ส่งข้อมูลเรียบร้อยแล้ว!");
         form.reset();
