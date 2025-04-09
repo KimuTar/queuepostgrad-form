@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ระบบลงทะเบียนผู้ใช้บริการ</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-white text-gray-800 min-h-screen flex items-center justify-center p-4">
+  <div class="w-full max-w-2xl bg-gradient-to-br from-purple-600 via-red-500 to-yellow-400 rounded-2xl shadow-xl p-1">
+    <div class="bg-white rounded-2xl p-6">
+      <h1 class="text-2xl font-bold text-purple-800 mb-6 text-center">ลงทะเบียนผู้ใช้บริการ</h1>
+
+      <form id="queueForm" class="space-y-4">
+        <!-- ผู้ที่มาติดต่อ -->
+        <div>
+          <label for="userType" class="block font-medium text-purple-700">ผู้ที่มาติดต่อ</label>
+          <select id="userType" name="userType" class="mt-1 w-full p-2 border rounded">
+            <option value="">-- กรุณาเลือก --</option>
+            <option value="นักศึกษาปริญญาโท">นักศึกษาปริญญาโท</option>
+            <option value="นักศึกษาปริญญาเอก">นักศึกษาปริญญาเอก</option>
+            <option value="อาจารย์">อาจารย์</option>
+          </select>
+        </div>
+
+        <!-- สาขาวิชา -->
+        <div id="majorSection" class="hidden">
+          <label for="major" class="block font-medium text-purple-700">สาขาวิชา</label>
+          <select id="major" name="major" class="mt-1 w-full p-2 border rounded"></select>
+        </div>
+
+        <!-- เรื่องที่ติดต่อ -->
+        <div>
+          <label for="topic" class="block font-medium text-purple-700">เรื่องที่ติดต่อ</label>
+          <select id="topic" name="topic" class="mt-1 w-full p-2 border rounded">
+            <option value="ส่งเอกสารต่างๆ">ส่งเอกสารต่างๆ</option>
+            <option value="การสอบ">การสอบ</option>
+            <option value="การสอบถามข้อมูลทั่วไป">การสอบถามข้อมูลทั่วไป</option>
+            <option value="อื่นๆ">อื่นๆ</option>
+          </select>
+        </div>
+
+        <!-- ถ้าเลือกอื่นๆ -->
+        <div id="otherTopicSection" class="hidden">
+          <label for="otherTopic" class="block font-medium text-purple-700">กรุณาระบุ</label>
+          <input type="text" id="otherTopic" name="otherTopic" class="mt-1 w-full p-2 border rounded" />
+        </div>
+
+        <!-- ปุ่ม submit -->
+        <div class="text-center">
+          <button type="submit" class="bg-purple-700 text-white px-6 py-2 rounded-full hover:bg-purple-800 shadow-md">บันทึกข้อมูล</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const userType = document.getElementById("userType");
+    const majorSection = document.getElementById("majorSection");
+    const majorSelect = document.getElementById("major");
+    const topic = document.getElementById("topic");
+    const otherTopicSection = document.getElementById("otherTopicSection");
+    const form = document.getElementById("queueForm");
+
+    const majors = {
+      "นักศึกษาปริญญาโท": [
+        "นิติศาสตร์",
+        "สาขาวิชาภาษาอังกฤษเพื่อการพัฒนาวิชาชีพ",
+        "สาขาวิชาเคมีประยุกต์",
+        "สาขาวิทยาศาสตร์ชีวภาพ",
+        "สาขาวิทยาการเชิงคำนวณและข้อมูล",
+        "สาขาวิชานวัตกรรมวัสดุเพื่อความยั่งยืน",
+        "สาขาวิชาการจัดการโลจิสติกส์และโซ่อุปทานระหว่างประเทศ",
+        "สาขาวิชาบริหารธุรกิจ"
+      ],
+      "นักศึกษาปริญญาเอก": [
+        "สาขาวิชาภาษาอังกฤษเพื่อการพัฒนาวิชาชีพ",
+        "สาขาวิชานวัตกรรมวัสดุเพื่อความยั่งยืน",
+        "สาขาวิชาเคมีประยุกต์",
+        "สาขาวิชาวิทยาศาสตร์ชีวภาพ",
+        "สาขาวิชาวิทยาการเชิงคำนวณและข้อมูล"
+      ]
+    };
+
+    userType.addEventListener("change", () => {
+      const selected = userType.value;
+      majorSelect.innerHTML = "";
+
+      if (majors[selected]) {
+        majors[selected].forEach((m) => {
+          const option = document.createElement("option");
+          option.value = m;
+          option.textContent = m;
+          majorSelect.appendChild(option);
+        });
+        majorSection.classList.remove("hidden");
+      } else {
+        majorSection.classList.add("hidden");
+      }
+    });
+
+    topic.addEventListener("change", () => {
+      otherTopicSection.classList.toggle("hidden", topic.value !== "อื่นๆ");
+    });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const formData = {
+        userType: userType.value,
+        major: majorSelect.value,
+        topic: topic.value,
+        otherTopic: document.getElementById("otherTopic").value
+      };
+
+      try {
+        const response = await fetch("YOUR_GOOGLE_SCRIPT_WEB_APP_URL", {
+          method: "POST",
+          mode: "no-cors",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(formData)
+        });
+
+        alert("ส่งข้อมูลเรียบร้อยแล้ว!");
+        form.reset();
+        majorSection.classList.add("hidden");
+        otherTopicSection.classList.add("hidden");
+      } catch (error) {
+        alert("เกิดข้อผิดพลาดในการส่งข้อมูล");
+        console.error(error);
+      }
+    });
+  </script>
+</body>
+</html>
