@@ -5,18 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ระบบเก็บข้อมูลผู้มาใช้บริการสำนักงานบัณฑิตศึกษา</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.21.0/dist/umd/supabase.min.js"></script>
 </head>
 <body class="bg-white text-gray-800 min-h-screen flex items-center justify-center p-4">
   <div class="w-full max-w-2xl bg-gradient-to-br from-purple-600 via-red-500 to-yellow-400 rounded-2xl shadow-xl p-1">
     <div class="bg-white rounded-2xl p-6">
       <h1 class="text-2xl font-bold text-purple-800 mb-6 text-center">ระบบเก็บข้อมูลผู้มาใช้บริการสำนักงานบัณฑิตศึกษา</h1>
 
-      <!-- แสดงสถานะการบันทึก -->
       <div id="statusMessage" class="hidden mb-4 p-3 rounded text-center"></div>
 
-      <!-- ฟอร์มกรอกข้อมูล -->
       <form id="queueForm" class="space-y-4">
-        <!-- ผู้ที่มาติดต่อ -->
         <div>
           <label for="userType" class="block font-medium text-purple-700">ผู้ที่มาติดต่อ *</label>
           <select id="userType" name="userType" class="mt-1 w-full p-2 border rounded" required>
@@ -27,13 +25,11 @@
           </select>
         </div>
 
-        <!-- สาขาวิชา -->
         <div id="majorSection" class="hidden">
           <label for="major" class="block font-medium text-purple-700">สาขาวิชา</label>
           <select id="major" name="major" class="mt-1 w-full p-2 border rounded"></select>
         </div>
 
-        <!-- เรื่องที่ติดต่อ -->
         <div>
           <label for="topic" class="block font-medium text-purple-700">เรื่องที่ติดต่อ *</label>
           <select id="topic" name="topic" class="mt-1 w-full p-2 border rounded" required>
@@ -44,13 +40,11 @@
           </select>
         </div>
 
-        <!-- ถ้าเลือกอื่นๆ -->
         <div id="otherTopicSection" class="hidden">
           <label for="otherTopic" class="block font-medium text-purple-700">กรุณาระบุ *</label>
           <input type="text" id="otherTopic" name="otherTopic" class="mt-1 w-full p-2 border rounded" />
         </div>
 
-        <!-- ปุ่ม submit -->
         <div class="text-center">
           <button type="submit" id="submitBtn" class="bg-purple-700 text-white px-6 py-2 rounded-full hover:bg-purple-800 shadow-md">
             บันทึกข้อมูล
@@ -61,21 +55,19 @@
   </div>
 
   <script>
+    const supabaseUrl = 'https://ijepkgzlpsixlgsmvdhn.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqZXBrZ3pscHNpeGxnc212ZGhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxODcwMTYsImV4cCI6MjA1OTc2MzAxNn0.SqUoSFxj8lkbQbzIka4T2UxEdth6ndOoEQoYcjPNsBo'; // <-- ไปที่ Supabase → Project Settings → API → Anon public
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
     const userType = document.getElementById("userType");
     const majorSection = document.getElementById("majorSection");
     const majorSelect = document.getElementById("major");
     const topic = document.getElementById("topic");
     const otherTopicSection = document.getElementById("otherTopicSection");
     const form = document.getElementById("queueForm");
-    const resultSection = document.getElementById("resultSection");
-    const queueNumber = document.getElementById("queueNumber");
-    const timestamp = document.getElementById("timestamp");
     const statusMessage = document.getElementById("statusMessage");
     const submitBtn = document.getElementById("submitBtn");
 
-    // เปลี่ยนเป็น URL ของ Google Apps Script ที่ deploy แล้ว
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzwO67oJWb3shZ9fhmtwbo4X3-4Y3JjWaYAlEThCmt4C3wi2gImeb-v5RPmuhYOGYg/exec";
-    
     const majors = {
       "นักศึกษาปริญญาโท": [
         "นิติศาสตร์",
@@ -95,6 +87,12 @@
         "สาขาวิชาวิทยาการเชิงคำนวณและข้อมูล"
       ]
     };
+
+    function showStatus(message, isError = false) {
+      statusMessage.textContent = message;
+      statusMessage.className = `mb-4 p-3 rounded text-center ${isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`;
+      statusMessage.classList.remove("hidden");
+    }
 
     userType.addEventListener("change", () => {
       const selected = userType.value;
@@ -122,105 +120,41 @@
       }
     });
 
-    // แสดงข้อความสถานะ
-    function showStatus(message, isError = false) {
-      statusMessage.textContent = message;
-      statusMessage.className = `mb-4 p-3 rounded text-center ${isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`;
-      statusMessage.classList.remove("hidden");
-    }
-
-    // ซ่อนข้อความสถานะ
-    function hideStatus() {
-      statusMessage.classList.add("hidden");
-    }
-
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       
-      // ตรวจสอบข้อมูล
-      if (!userType.value) {
-        showStatus("กรุณาเลือกประเภทผู้มาติดต่อ", true);
-        return;
-      }
-      
-      if (topic.value === "อื่นๆ" && !document.getElementById("otherTopic").value.trim()) {
-        showStatus("กรุณาระบุเรื่องที่ติดต่อ", true);
+      const userTypeValue = userType.value;
+      const majorValue = majorSelect.value || "";
+      const topicValue = topic.value === "อื่นๆ" ? document.getElementById("otherTopic").value : topic.value;
+
+      if (!userTypeValue || !topicValue) {
+        showStatus("กรุณากรอกข้อมูลให้ครบถ้วน", true);
         return;
       }
 
-      // แสดงข้อความกำลังประมวลผล
       showStatus("กำลังบันทึกข้อมูล...");
       submitBtn.disabled = true;
       submitBtn.textContent = "กำลังบันทึก...";
-      
-      // สร้าง FormData เพื่อส่งแบบ no-cors
-      const formData = new FormData();
-      formData.append("userType", userType.value);
-      formData.append("major", majorSelect.value || "");
-      formData.append("topic", topic.value);
-      formData.append("otherTopic", document.getElementById("otherTopic").value || "");
-      
-      // เตรียมข้อมูล JSON เพื่อส่งแบบ jsonp
-      const jsonData = {
-        userType: userType.value,
-        major: majorSelect.value || "",
-        topic: topic.value,
-        otherTopic: document.getElementById("otherTopic").value || ""
-      };
-      
-      // แก้ไขปัญหา CORS โดยใช้ JSONP technique แทน fetch
-      // สร้าง script element
-      const script = document.createElement('script');
-      
-      // สร้างชื่อ callback function พร้อม timestamp เพื่อไม่ให้ซ้ำกัน
-      const callbackName = 'jsonpCallback' + Date.now();
-      
-      // สร้าง global function เพื่อรับข้อมูลจาก server
-      window[callbackName] = function(data) {
-        if (data && data.success) {
-          // แสดงผลลัพธ์
-          resultSection.classList.remove("hidden");
-          queueNumber.textContent = data.index || "-";
-          timestamp.textContent = new Date().toLocaleString("th-TH");
-          
-          // แสดงข้อความสำเร็จ
-          showStatus("บันทึกข้อมูลเรียบร้อยแล้ว!");
-          
-          // รีเซ็ตฟอร์ม
-          form.reset();
-          majorSection.classList.add("hidden");
-          otherTopicSection.classList.add("hidden");
-        } else {
-          // แสดงข้อความผิดพลาด
-          showStatus("เกิดข้อผิดพลาดในการบันทึกข้อมูล", true);
-        }
-        
-        // คืนค่าปุ่ม
-        submitBtn.disabled = false;
-        submitBtn.textContent = "บันทึกข้อมูล";
-        
-        // ลบ global function เมื่อใช้งานเสร็จ
-        delete window[callbackName];
-        
-        // ลบ script element
-        script.remove();
-      };
-      
-      // เพิ่ม script เข้าไปใน document
-      // ส่งข้อมูลไปยัง Google Apps Script พร้อมชื่อ callback
-      script.src = `${SCRIPT_URL}?callback=${callbackName}&data=${encodeURIComponent(JSON.stringify(jsonData))}`;
-      document.body.appendChild(script);
-      
-      // เพิ่ม timeout เพื่อจัดการกรณีที่ไม่ได้รับการตอบกลับ
-      setTimeout(() => {
-        if (window[callbackName]) {
-          showStatus("ไม่ได้รับการตอบกลับจากเซิร์ฟเวอร์", true);
-          submitBtn.disabled = false;
-          submitBtn.textContent = "บันทึกข้อมูล";
-          delete window[callbackName];
-          script.remove();
-        }
-      }, 10000); // timeout 10 วินาที
+
+      try {
+        // บันทึกลง 3 ตาราง
+        await Promise.all([
+          supabase.from("student_level").insert([{ name: userTypeValue }]),
+          majorValue && supabase.from("major").insert([{ name: majorValue }]),
+          supabase.from("subject").insert([{ name: topicValue }])
+        ]);
+
+        showStatus("บันทึกข้อมูลเรียบร้อยแล้ว 🎉");
+        form.reset();
+        majorSection.classList.add("hidden");
+        otherTopicSection.classList.add("hidden");
+      } catch (error) {
+        showStatus("เกิดข้อผิดพลาดในการบันทึกข้อมูล ❌", true);
+        console.error("Supabase insert error:", error);
+      }
+
+      submitBtn.disabled = false;
+      submitBtn.textContent = "บันทึกข้อมูล";
     });
   </script>
 </body>
