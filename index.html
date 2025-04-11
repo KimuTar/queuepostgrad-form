@@ -1,161 +1,362 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ระบบเก็บข้อมูลผู้มาใช้บริการสำนักงานบัณฑิตศึกษา</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.21.0/dist/umd/supabase.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบคิวสำนักงานบัณฑิตศึกษา</title>
+    <style>
+        :root {
+            --red: #d32f2f;
+            --gold: #daa520;
+            --purple: #673ab7;
+            --white: #ffffff;
+            --gray: #f5f5f5;
+            --dark-gray: #333333;
+        }
+        
+        body {
+            font-family: 'Prompt', 'Kanit', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--gray);
+            color: var(--dark-gray);
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--purple), var(--red));
+            color: var(--white);
+            padding: 20px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+        
+        .queue-display {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            gap: 20px;
+        }
+        
+        .queue-number {
+            flex: 1;
+            background-color: var(--white);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid var(--red);
+        }
+        
+        .queue-number h2 {
+            color: var(--dark-gray);
+            margin-top: 0;
+            font-size: 16px;
+        }
+        
+        .number {
+            font-size: 48px;
+            font-weight: bold;
+            color: var(--red);
+        }
+        
+        .datetime {
+            flex: 1;
+            background-color: var(--white);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid var(--purple);
+        }
+        
+        .datetime h2 {
+            color: var(--dark-gray);
+            margin-top: 0;
+            font-size: 16px;
+        }
+        
+        .date, .time {
+            font-size: 24px;
+            color: var(--purple);
+        }
+        
+        .form-container {
+            background-color: var(--white);
+            padding: 20px;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: var(--dark-gray);
+        }
+        
+        select, input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            color: var(--dark-gray);
+            background-color: var(--white);
+        }
+        
+        select:focus, input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--purple);
+            box-shadow: 0 0 5px rgba(103, 58, 183, 0.3);
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 30px;
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .save-btn {
+            background-color: var(--gold);
+            color: var(--white);
+        }
+        
+        .save-btn:hover {
+            background-color: #c69500;
+        }
+        
+        .cancel-btn {
+            background-color: #f3f3f3;
+            color: var(--dark-gray);
+        }
+        
+        .cancel-btn:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
 </head>
-<body class="bg-white text-gray-800 min-h-screen flex items-center justify-center p-4">
-  <div class="w-full max-w-2xl bg-gradient-to-br from-purple-600 via-red-500 to-yellow-400 rounded-2xl shadow-xl p-1">
-    <div class="bg-white rounded-2xl p-6">
-      <h1 class="text-2xl font-bold text-purple-800 mb-6 text-center">ระบบเก็บข้อมูลผู้มาใช้บริการสำนักงานบัณฑิตศึกษา</h1>
-
-      <div id="statusMessage" class="hidden mb-4 p-3 rounded text-center"></div>
-
-      <form id="queueForm" class="space-y-4">
-        <div>
-          <label for="userType" class="block font-medium text-purple-700">ผู้ที่มาติดต่อ *</label>
-          <select id="userType" name="userType" class="mt-1 w-full p-2 border rounded" required>
-            <option value="">-- กรุณาเลือก --</option>
-            <option value="นักศึกษาปริญญาโท">นักศึกษาปริญญาโท</option>
-            <option value="นักศึกษาปริญญาเอก">นักศึกษาปริญญาเอก</option>
-            <option value="อาจารย์">อาจารย์</option>
-          </select>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ระบบคิวสำนักงานบัณฑิตศึกษา</h1>
         </div>
-
-        <div id="majorSection" class="hidden">
-          <label for="major" class="block font-medium text-purple-700">สาขาวิชา</label>
-          <select id="major" name="major" class="mt-1 w-full p-2 border rounded"></select>
+        
+        <div class="queue-display">
+            <div class="queue-number">
+                <h2>หมายเลขคิว</h2>
+                <div class="number" id="queueNumber">001</div>
+            </div>
+            
+            <div class="datetime">
+                <h2>วันและเวลา</h2>
+                <div class="date" id="currentDate">11 เมษายน 2025</div>
+                <div class="time" id="currentTime">14:30:45</div>
+            </div>
         </div>
-
-        <div>
-          <label for="topic" class="block font-medium text-purple-700">เรื่องที่ติดต่อ *</label>
-          <select id="topic" name="topic" class="mt-1 w-full p-2 border rounded" required>
-            <option value="ส่งเอกสารต่างๆ">ส่งเอกสารต่างๆ</option>
-            <option value="การสอบ">การสอบ</option>
-            <option value="การสอบถามข้อมูลทั่วไป">การสอบถามข้อมูลทั่วไป</option>
-            <option value="อื่นๆ">อื่นๆ</option>
-          </select>
+        
+        <div class="form-container">
+            <form id="queueForm">
+                <div class="form-group">
+                    <label for="visitorType">ผู้ที่มาติดต่อ:</label>
+                    <select id="visitorType" required>
+                        <option value="" disabled selected>--- เลือกประเภทผู้มาติดต่อ ---</option>
+                        <option value="master">นักศึกษาปริญญาโท</option>
+                        <option value="phd">นักศึกษาปริญญาเอก</option>
+                        <option value="professor">อาจารย์</option>
+                    </select>
+                </div>
+                
+                <div class="form-group hidden" id="majorGroup">
+                    <label for="major">สาขาวิชา:</label>
+                    <select id="major" required>
+                        <option value="" disabled selected>--- เลือกสาขาวิชา ---</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="contactReason">เรื่องที่ติดต่อ:</label>
+                    <select id="contactReason" required>
+                        <option value="" disabled selected>--- เลือกเรื่องที่ติดต่อ ---</option>
+                        <option value="documents">ส่งเอกสารต่างๆ</option>
+                        <option value="exam">การสอบ</option>
+                        <option value="information">การสอบถามข้อมูลทั่วไป</option>
+                        <option value="other">อื่นๆ</option>
+                    </select>
+                </div>
+                
+                <div class="form-group hidden" id="otherReasonGroup">
+                    <label for="otherReason">โปรดระบุเรื่องที่ติดต่อ:</label>
+                    <textarea id="otherReason" rows="4" maxlength="1000" placeholder="กรุณาระบุรายละเอียด (ไม่เกิน 1000 ตัวอักษร)"></textarea>
+                </div>
+                
+                <div class="buttons">
+                    <button type="button" class="cancel-btn" id="cancelBtn">ยกเลิก</button>
+                    <button type="submit" class="save-btn" id="saveBtn">บันทึก</button>
+                </div>
+            </form>
         </div>
-
-        <div id="otherTopicSection" class="hidden">
-          <label for="otherTopic" class="block font-medium text-purple-700">กรุณาระบุ *</label>
-          <input type="text" id="otherTopic" name="otherTopic" class="mt-1 w-full p-2 border rounded" />
-        </div>
-
-        <div class="text-center">
-          <button type="submit" id="submitBtn" class="bg-purple-700 text-white px-6 py-2 rounded-full hover:bg-purple-800 shadow-md">
-            บันทึกข้อมูล
-          </button>
-        </div>
-      </form>
     </div>
-  </div>
 
-  <script>
-    const supabaseUrl = 'https://ijepkgzlpsixlgsmvdhn.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqZXBrZ3pscHNpeGxnc212ZGhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxODcwMTYsImV4cCI6MjA1OTc2MzAxNn0.SqUoSFxj8lkbQbzIka4T2UxEdth6ndOoEQoYcjPNsBo'; // <-- ไปที่ Supabase → Project Settings → API → Anon public
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    <script>
+        // ข้อมูลสาขาวิชา
+        const majorData = {
+            master: [
+                "สาขาวิชาภาษาอังกฤษเพื่อการพัฒนาวิชาชีพ",
+                "สาขาวิชาเคมีประยุกต์",
+                "สาขาวิทยาศาสตร์ชีวภาพ",
+                "สาขาวิทยาการเชิงคำนวณและข้อมูล",
+                "สาขาวิชานวัตกรรมวัสดุเพื่อความยั่งยืน",
+                "สาขาวิชาการจัดการโลจิสติกส์และโซ่อุปทานระหว่างประเทศ",
+                "สาขาวิชาบริหารธุรกิจ"
+            ],
+            phd: [
+                "สาขาวิชาภาษาอังกฤษเพื่อการพัฒนาวิชาชีพ",
+                "สาขาวิชานวัตกรรมวัสดุเพื่อความยั่งยืน",
+                "สาขาวิชาเคมีประยุกต์",
+                "สาขาวิชาวิทยาศาสตร์ชีวภาพ",
+                "สาขาวิชาวิทยาการเชิงคำนวณและข้อมูล"
+            ]
+        };
 
-    const userType = document.getElementById("userType");
-    const majorSection = document.getElementById("majorSection");
-    const majorSelect = document.getElementById("major");
-    const topic = document.getElementById("topic");
-    const otherTopicSection = document.getElementById("otherTopicSection");
-    const form = document.getElementById("queueForm");
-    const statusMessage = document.getElementById("statusMessage");
-    const submitBtn = document.getElementById("submitBtn");
+        // อัพเดทเวลาแบบเรียลไทม์
+        function updateDateTime() {
+            const now = new Date();
+            
+            // วันที่
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            const dateStr = now.toLocaleDateString('th-TH', options);
+            document.getElementById('currentDate').textContent = dateStr;
+            
+            // เวลา
+            const timeStr = now.toLocaleTimeString('th-TH');
+            document.getElementById('currentTime').textContent = timeStr;
+        }
 
-    const majors = {
-      "นักศึกษาปริญญาโท": [
-        "นิติศาสตร์",
-        "สาขาวิชาภาษาอังกฤษเพื่อการพัฒนาวิชาชีพ",
-        "สาขาวิชาเคมีประยุกต์",
-        "สาขาวิทยาศาสตร์ชีวภาพ",
-        "สาขาวิทยาการเชิงคำนวณและข้อมูล",
-        "สาขาวิชานวัตกรรมวัสดุเพื่อความยั่งยืน",
-        "สาขาวิชาการจัดการโลจิสติกส์และโซ่อุปทานระหว่างประเทศ",
-        "สาขาวิชาบริหารธุรกิจ"
-      ],
-      "นักศึกษาปริญญาเอก": [
-        "สาขาวิชาภาษาอังกฤษเพื่อการพัฒนาวิชาชีพ",
-        "สาขาวิชานวัตกรรมวัสดุเพื่อความยั่งยืน",
-        "สาขาวิชาเคมีประยุกต์",
-        "สาขาวิชาวิทยาศาสตร์ชีวภาพ",
-        "สาขาวิชาวิทยาการเชิงคำนวณและข้อมูล"
-      ]
-    };
+        // อัพเดทเวลาทุกวินาที
+        setInterval(updateDateTime, 1000);
+        updateDateTime(); // เรียกใช้ครั้งแรก
 
-    function showStatus(message, isError = false) {
-      statusMessage.textContent = message;
-      statusMessage.className = `mb-4 p-3 rounded text-center ${isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`;
-      statusMessage.classList.remove("hidden");
-    }
+        // เพิ่มเลขคิวอัตโนมัติ (จำลอง)
+        let queueNumber = 1;
+        function updateQueueNumber() {
+            // แสดงเลขคิวแบบเติม 0 ข้างหน้า
+            document.getElementById('queueNumber').textContent = String(queueNumber).padStart(3, '0');
+        }
+        updateQueueNumber();
 
-    userType.addEventListener("change", () => {
-      const selected = userType.value;
-      majorSelect.innerHTML = "";
-
-      if (majors[selected]) {
-        majors[selected].forEach((m) => {
-          const option = document.createElement("option");
-          option.value = m;
-          option.textContent = m;
-          majorSelect.appendChild(option);
+        // Event listeners
+        document.getElementById('visitorType').addEventListener('change', function() {
+            const majorGroup = document.getElementById('majorGroup');
+            const majorSelect = document.getElementById('major');
+            
+            // เคลียร์ตัวเลือกเดิม
+            majorSelect.innerHTML = '<option value="" disabled selected>--- เลือกสาขาวิชา ---</option>';
+            
+            if (this.value === 'master' || this.value === 'phd') {
+                // เพิ่มตัวเลือกสาขาวิชา
+                majorData[this.value].forEach(major => {
+                    const option = document.createElement('option');
+                    option.value = major;
+                    option.textContent = major;
+                    majorSelect.appendChild(option);
+                });
+                
+                majorGroup.classList.remove('hidden');
+            } else {
+                majorGroup.classList.add('hidden');
+            }
         });
-        majorSection.classList.remove("hidden");
-      } else {
-        majorSection.classList.add("hidden");
-      }
-    });
 
-    topic.addEventListener("change", () => {
-      otherTopicSection.classList.toggle("hidden", topic.value !== "อื่นๆ");
-      if (topic.value === "อื่นๆ") {
-        document.getElementById("otherTopic").setAttribute("required", "");
-      } else {
-        document.getElementById("otherTopic").removeAttribute("required");
-      }
-    });
+        document.getElementById('contactReason').addEventListener('change', function() {
+            const otherReasonGroup = document.getElementById('otherReasonGroup');
+            
+            if (this.value === 'other') {
+                otherReasonGroup.classList.remove('hidden');
+                document.getElementById('otherReason').setAttribute('required', '');
+            } else {
+                otherReasonGroup.classList.add('hidden');
+                document.getElementById('otherReason').removeAttribute('required');
+            }
+        });
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      
-      const userTypeValue = userType.value;
-      const majorValue = majorSelect.value || "";
-      const topicValue = topic.value === "อื่นๆ" ? document.getElementById("otherTopic").value : topic.value;
+        // ฟอร์มส่งข้อมูล
+        document.getElementById('queueForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // ตรวจสอบข้อมูล
+            const visitorType = document.getElementById('visitorType').value;
+            if (!visitorType) {
+                alert('กรุณาเลือกประเภทผู้มาติดต่อ');
+                return;
+            }
+            
+            if ((visitorType === 'master' || visitorType === 'phd') && !document.getElementById('major').value) {
+                alert('กรุณาเลือกสาขาวิชา');
+                return;
+            }
+            
+            const contactReason = document.getElementById('contactReason').value;
+            if (!contactReason) {
+                alert('กรุณาเลือกเรื่องที่ติดต่อ');
+                return;
+            }
+            
+            if (contactReason === 'other' && !document.getElementById('otherReason').value.trim()) {
+                alert('กรุณาระบุรายละเอียดเรื่องที่ติดต่อ');
+                return;
+            }
+            
+            // บันทึกข้อมูล (จำลอง)
+            alert('บันทึกข้อมูลสำเร็จ');
+            
+            // เพิ่มเลขคิวและรีเซ็ตฟอร์ม
+            queueNumber++;
+            updateQueueNumber();
+            this.reset();
+            
+            // ซ่อนช่องกรอกข้อมูลเพิ่มเติม
+            document.getElementById('majorGroup').classList.add('hidden');
+            document.getElementById('otherReasonGroup').classList.add('hidden');
+        });
 
-      if (!userTypeValue || !topicValue) {
-        showStatus("กรุณากรอกข้อมูลให้ครบถ้วน", true);
-        return;
-      }
-
-      showStatus("กำลังบันทึกข้อมูล...");
-      submitBtn.disabled = true;
-      submitBtn.textContent = "กำลังบันทึก...";
-
-      try {
-        // บันทึกลง 3 ตาราง
-        await Promise.all([
-          supabase.from("student_level").insert([{ name: userTypeValue }]),
-          majorValue && supabase.from("major").insert([{ name: majorValue }]),
-          supabase.from("subject").insert([{ name: topicValue }])
-        ]);
-
-        showStatus("บันทึกข้อมูลเรียบร้อยแล้ว 🎉");
-        form.reset();
-        majorSection.classList.add("hidden");
-        otherTopicSection.classList.add("hidden");
-      } catch (error) {
-        showStatus("เกิดข้อผิดพลาดในการบันทึกข้อมูล ❌", true);
-        console.error("Supabase insert error:", error);
-      }
-
-      submitBtn.disabled = false;
-      submitBtn.textContent = "บันทึกข้อมูล";
-    });
-  </script>
+        // ปุ่มยกเลิก
+        document.getElementById('cancelBtn').addEventListener('click', function() {
+            document.getElementById('queueForm').reset();
+            document.getElementById('majorGroup').classList.add('hidden');
+            document.getElementById('otherReasonGroup').classList.add('hidden');
+        });
+    </script>
 </body>
 </html>
